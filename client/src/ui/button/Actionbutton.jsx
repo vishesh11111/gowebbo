@@ -8,7 +8,12 @@ export const Actionbutton = (props) => {
 }
 
 export const LogoutButton = () => {
-    return <button className='text-[1.8rem] md:text-[2.3rem] lg:text-[3.2rem] flex items-center bg-buttonPrimary px-10 py-2 rounded-xl'>
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        window.location.reload();
+    }
+
+    return <button type='button' onClick={handleLogout} className='text-[1.8rem] md:text-[2.3rem] lg:text-[3.2rem] flex items-center bg-buttonPrimary px-10 py-2 rounded-xl'>
         <LogoutSvg />
         <p>Logout</p>
     </button>

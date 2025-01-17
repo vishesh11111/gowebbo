@@ -8,13 +8,13 @@ import { useDispatch } from 'react-redux';
 import { addBox } from "../redux/slices/formSlice"
 
 
-const Section_first = () => {
+const SectionFirst = () => {
   const dispatch = useDispatch();
 
   const handleCreateBox = useCallback((data) => {
     let final_data = { id: Math.floor(Math.random() * 10000) + 6710200 * Math.floor(Math.random() * 1900) + 200000, ...data };
     dispatch(addBox(final_data))
-  }, [])
+  }, [dispatch])
 
   return (
     <div className='w-full h-full flex flex-col justify-between  py-14  px-3 sm:px-10'>
@@ -45,4 +45,4 @@ const Section_first = () => {
   )
 }
 
-export default Section_first
+export default SectionFirst

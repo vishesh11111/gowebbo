@@ -31,8 +31,12 @@ formControllers.update = async (req, res, next) => {
     try {
         const { body } = req;
         const { id } = req?.params;
+        if (!id) {
+            return res.status(400).send({ success: false, message: "Invalid form link" });
+        }
         const schema = Joi.object({
             title: Joi.string().optional().allow(null),
+            link: Joi.string().optional().allow(null, ""),
             data: Joi.array().optional().allow(null),
             active: Joi.boolean().optional().allow(null, ""),
         }).options({ abortEarly: false });
@@ -40,7 +44,7 @@ formControllers.update = async (req, res, next) => {
         if (error) {
             return res.status(404).send(AppError(error.details[0].message))
         }
-        const form_update = await Form.findByIdAndUpdate(id, body);
+        const form_update = await Form.updateOne({link: id}, body);
         return res.status(200).send({ success: true, message: "Form update successfully", data: form_update })
     } catch (error) {
         console.log(error);
@@ -51,13 +55,13 @@ formControllers.update = async (req, res, next) => {
 formControllers.findOne = async (req, res, next) => {
     try {
         const { id } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).send({ success: false, message: "Invalid form ID" });
+        if (!id) {
+            return res.status(400).send({ success: false, message: "Invalid form link" });
         }
 
         const form = await Form.aggregate([
             {
-                $match: { _id: new mongoose.Types.ObjectId(id) },
+                $match: { link: id },
             },
             {
                 $lookup: {

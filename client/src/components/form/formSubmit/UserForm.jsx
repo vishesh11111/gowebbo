@@ -3,54 +3,81 @@ import { useForm, Controller } from 'react-hook-form';
 import { Actionbutton } from '../../../ui/button/Actionbutton';
 import { InputUiForm } from '../../../ui/inputs/Input';
 import Paragraph1 from '../../../ui/paragraph/Paragraph1';
+import { useParams } from 'react-router-dom';
+import api_wrapper from '../../apis/Api_wrapper';
+import { useDispatch } from 'react-redux';
+import { SetLoading } from '../../redux/slices/formSlice';
+import { toast, ToastContainer } from 'react-toastify';
+import ThankYouScreen from "../../../components/thankYouScreen/ThankYouScreen"
+import Heading1 from '../../../ui/heading/Heading1';
 
 const UserForm = ({ fields }) => {
     const { control, handleSubmit, setValue, formState: { errors } } = useForm();
-    const [selectedCheckbox, setSelectedCheckbox] = useState(null);
-    const [isButtonDisabled, setIsButtonDisabled] = useState(true);
+    const [selectedStoreAs, setSelectedStoreAs] = useState({});
+    const [thankyouShow, setThankyouShow] = useState(false);
+    const { slug } = useParams();
+    const dispatch = useDispatch();
 
-    const onSubmit = (data) => {
-        console.log(data);
-    };
-
-    const handleCheckboxChange = (fieldName) => {
-        setSelectedCheckbox(fieldName);
-        let anySelected = false;
-        fields.forEach(field => {
-            if (field.html_type === 'button') {
-                const isChecked = field.name === fieldName;
-                setValue(field.name, isChecked);
-                if (isChecked) anySelected = true;
+    const onSubmit = async (data) => {
+        let modifiedData = {};
+        dispatch(SetLoading(true));
+        Object.entries(data).forEach(([key, value]) => {
+            if (typeof value !== "boolean") {
+                modifiedData[key] = value;
             }
         });
-        setIsButtonDisabled(!anySelected);
+        Object.entries(selectedStoreAs).forEach(([storeAs, fieldName]) => {
+            modifiedData[storeAs] = fieldName;
+        });
+        try {
+            const result = await api_wrapper.post(`/form_submit/create/${slug}`, { data: modifiedData })
+            if (result?.data.success) {
+                setThankyouShow(true)
+                toast.success(result?.data?.message)
+                dispatch(SetLoading(false));
+            }
+        } catch (error) {
+            dispatch(SetLoading(false));
+            console.log("error->", error);
+        }
+
+    };
+
+    const handleCheckboxChange = (fieldName, storeAs) => {
+        if (selectedStoreAs[storeAs] === fieldName) return;
+
+        setSelectedStoreAs(prev => ({ ...prev, [storeAs]: fieldName }));
+
+        fields.forEach(field => {
+            if (field.html_type === 'button' && field.store_as === storeAs) {
+                setValue(field.name, field.name === fieldName);
+            }
+        });
     };
 
     const renderField = (field, index) => {
-        const commonClass = "";
-
         switch (field.html_type) {
             case 'input':
+            case 'date':
                 return (
-                    <div key={index} className={`flex flex-col ${commonClass}`}>
-                        <label className="text-[1.6rem] md:text-[2rem] mb-1">
-                            {field.label || field.value}
-                        </label>
+                    <div key={index} className="flex flex-col">
+                        {field.label && <label className="text-[1.6rem] md:text-[2rem] mb-1">{field.label}</label>}
                         <Controller
                             name={field.name}
                             control={control}
-                            rules={{ 
+                            rules={{
                                 required: `${field.value} is required`,
-                                maxLength: field.character_limit ? { value: parseInt(field.character_limit), message: `Max ${field.character_limit} characters` } : undefined,
+                                ...(field.type !== 'date' && field.character_limit
+                                    ? { maxLength: { value: parseInt(field.character_limit), message: `Max ${field.character_limit} characters` } }
+                                    : {}),
                             }}
                             render={({ field: { onChange, value } }) => (
                                 <>
                                     <InputUiForm
                                         onChange={onChange}
                                         value={value || ''}
-                                        type={field?.type}
+                                        type={field.type} // Use field.html_type to properly handle date inputs
                                         placeholder={field?.value}
-                                        maxLength={field.character_limit || undefined}
                                     />
                                     {errors[field.name] && (
                                         <p className="text-red-500 text-sm">{errors[field.name].message}</p>
@@ -71,7 +98,7 @@ const UserForm = ({ fields }) => {
                 );
             case 'button':
                 return (
-                    <div key={index} className={commonClass}>
+                    <div key={index}>
                         <Controller
                             name={field.name}
                             control={control}
@@ -80,11 +107,12 @@ const UserForm = ({ fields }) => {
                                 <label className="flex items-center space-x-2 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        checked={selectedCheckbox === field.name}
-                                        onChange={() => handleCheckboxChange(field.name)}
-                                        className="form-checkbox h-5 w-5 text-blue-600"
+                                        checked={selectedStoreAs[field.store_as] === field.name}
+                                        onChange={() => handleCheckboxChange(field.name, field.store_as)}
+                                        className="form-checkbox md:h-9 md:w-9 text-blue-600"
+                                        disabled={selectedStoreAs[field.store_as] && selectedStoreAs[field.store_as] !== field.name}
                                     />
-                                    <span className={`text-[1.6rem] md:text-[2rem] ${selectedCheckbox === field.name ? 'text-blue-600' : 'text-black'}`}>
+                                    <span className={`text-[1.6rem] md:text-[2rem] ${selectedStoreAs[field.store_as] === field.name ? 'text-blue-600' : 'text-black'}`}>
                                         {field.value || 'Button'}
                                     </span>
                                 </label>
@@ -108,31 +136,41 @@ const UserForm = ({ fields }) => {
     }, []);
 
     return (
-        <div className="w-full mt-10">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {groupedFields.map((group, groupIndex) => (
-                    <div key={groupIndex} className="space-y-4">
-                        {group[0].html_type === 'input' ? (
-                            <div className="grid grid-cols-1 gap-4 md:gap-x-10 sm:grid-cols-2">
-                                {group.map(renderField)}
+        <div>
+            {!thankyouShow ?
+                <div className='max-w-[90rem] px-4 md:px-16 py-10 rounded-xl  bg-primary m-auto'>
+                    <Heading1 title={"Please fill form one"} />
+                    <div className="w-full mt-12">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                            {groupedFields.map((group, groupIndex) => (
+                                <div key={groupIndex} className="space-y-4">
+                                    {group[0].html_type === 'input' ? (
+                                        <div className="grid grid-cols-1 gap-4 md:gap-x-10 sm:grid-cols-2">
+                                            {group.map(renderField)}
+                                        </div>
+                                    ) : group[0].html_type === 'button' ? (
+                                        <div className="flex flex-wrap gap-4">
+                                            {group.map(renderField)}
+                                        </div>
+                                    ) : (
+                                        group.map(renderField)
+                                    )}
+                                </div>
+                            ))}
+                            <div className="flex justify-end">
+                                <Actionbutton
+                                    type="submit"
+                                    className="text-[1.6rem] mt-32 md:text-[2rem] border px-9 rounded-lg md:px-16 py-4 bg-white text-black"
+                                    text="Submit"
+                                />
                             </div>
-                        ) : group[0].html_type === 'button' ? (
-                            <div className="flex flex-wrap gap-4">
-                                {group.map(renderField)}
-                            </div>
-                        ) : (
-                            group.map(renderField)
-                        )}
+                        </form>
                     </div>
-                ))}
-                <div className="flex justify-end">
-                    <Actionbutton
-                        type="submit"
-                        className="text-[1.6rem] md:text-[2rem] px-8 rounded-lg md:px-10 py-4 bg-buttonPrimary text-white"
-                        text="Submit"
-                    />
                 </div>
-            </form>
+                :
+                <ThankYouScreen />
+            }
+            <ToastContainer />
         </div>
     );
 };

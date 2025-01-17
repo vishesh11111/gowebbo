@@ -4,12 +4,10 @@ import Heading1 from '../ui/heading/Heading1';
 import { Actionbutton } from '../ui/button/Actionbutton';
 import { LoginAction } from "../components/apis/Api_wrapper.js";
 import { ToastContainer, toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch} from 'react-redux';
 import { SetLoading } from '../components/redux/slices/formSlice.js';
 
 const Login = () => {
-  const navigate = useNavigate()
   const dispatch = useDispatch();
 
   const {
@@ -24,7 +22,6 @@ const Login = () => {
   });
 
   const onSubmit = async (data) => {
-    console.log(data);
     dispatch(SetLoading(true))
     const result = await LoginAction(data)
     if (result?.status) {
@@ -42,7 +39,7 @@ const Login = () => {
 
   return (
     <div className='w-full h-screen justify-center items-center flex'>
-      <div className="login-container shadow-xl px-10 py-10 rounded-xl min-w-[50rem] border m-auto">
+      <div className="login-container shadow-xl px-10 py-10 rounded-xl  sm:min-w-[40rem] md:min-w-[50rem] border m-auto">
         <Heading1 title="Login" />
         <form className='flex flex-col space-y-5 mt-6' onSubmit={handleSubmit(onSubmit)}>
           <div>

@@ -19,11 +19,11 @@ formControllers.create = async (req, res, next) => {
             return res.status(404).send(AppError(error.details[0].message))
         }
 
-        const getForm = await Form.findById(form_id)
+        const getForm = await Form.findOne({ link: form_id });
         if (!getForm) {
             return res.status(404).send(AppError("Form not found"))
         }
-        const form_submission_Create = await Form_submit.create({ ...body, form_id: form_id });
+        const form_submission_Create = await Form_submit.create({ ...body, form_id: getForm?._id });
         return res.status(200).send({ success: true, message: "Form submit successfully", data: form_submission_Create })
     } catch (error) {
         console.log(error);

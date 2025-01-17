@@ -54,6 +54,7 @@ const initialState = {
     value: ""
   },
   loading: false,
+  submittedData: []
 };
 
 export const formSlice = createSlice({
@@ -75,6 +76,9 @@ export const formSlice = createSlice({
     SetLoading: (state, action) => {
       state.loading = action.payload;
     },
+    SetSubmittedData: (state, action) => {
+      state.submittedData = action.payload;
+    },
   }
 });
 
@@ -83,6 +87,8 @@ export const { handleSelectBox } = formSlice.actions;
 export const { updateEntries } = formSlice.actions;
 export const { slugCreate } = formSlice.actions;
 export const { SetLoading } = formSlice.actions;
+export const { SetSubmittedData } = formSlice.actions;
+
 
 
 export default formSlice.reducer;

@@ -1,25 +1,58 @@
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form';
-import Section_first from './Section_first';
-import Section_second from './Section_second';
+import React, { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { SetLoading, updateEntries } from '../redux/slices/formSlice';
+import { SetLoading, SetSubmittedData, slugCreate, updateEntries } from '../redux/slices/formSlice';
 import { ToastContainer, toast } from 'react-toastify';
 import api_wrapper from "../../components/apis/Api_wrapper"
-import Loader from "../../ui/loading/Loader"
-import UserForm from './formSubmit/UserForm';
+import { useParams } from 'react-router-dom';
+import SectionFirst from './Section_first';
+import SectionSecond from './Section_second';
 
-const Form = () => {
-    const [formInput, setFormInput] = useState([])
-    const { register, formState: { errors } } = useForm();
+const FormComponent = () => {
     const entries = useSelector(state => state?.form?.entries);
     const slug = useSelector(state => state?.form?.slug);
     const dispatch = useDispatch();
+    const { slug: link } = useParams();
+
+    const getDetails = useCallback(async () => {
+        try {
+            dispatch(SetLoading(true));
+            const result = await api_wrapper.get(`/form/findById/${link}`)
+            if (result?.data?.success) {
+                dispatch(slugCreate({
+                    value: result?.data?.data?.title,
+                    slug: result?.data?.data?.link
+                }))
+                dispatch(updateEntries(result?.data?.data?.data || []))
+                const finaleData = result.data?.data?.submissions.length > 0 ? result.data?.data?.submissions?.map((item) => item?.data) : []
+                dispatch(SetSubmittedData(finaleData));
+                // dispatch(SetSubmittedData())
+                dispatch(SetLoading(false));
+            } else {
+                dispatch(SetLoading(false));
+                toast.error(result?.data?.message)
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }, [link, dispatch])
+
+    useMemo(() => {
+        if (link) {
+            getDetails();
+        } else {
+            dispatch(updateEntries([]))
+            dispatch(SetSubmittedData([]))
+            dispatch(slugCreate({
+                slug: "",
+                value: ""
+            }))
+        }
+    }, [link, getDetails, dispatch])
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         const valueCheck = validateEntries(entries);
-        if (entries.length == 0) {
+        if (entries.length === 0) {
             return;
         }
         if (!valueCheck?.status) {
@@ -38,7 +71,17 @@ const Form = () => {
             data: entries
         }
         try {
-            const result = await api_wrapper.post("/form/create", serverData)
+            let method = {
+                method: "post",
+                url: "/form/create"
+            }
+            if (link) {
+                method = {
+                    method: "patch",
+                    url: `/form/update/${link}`
+                }
+            }
+            const result = await api_wrapper[method?.method](method?.url, serverData)
             if (result?.data?.success) {
                 toast.success(result?.data?.message)
                 dispatch(SetLoading(false));
@@ -47,30 +90,26 @@ const Form = () => {
             dispatch(SetLoading(false));
             console.log(error);
         }
-
-        console.log("yel", serverData)
-        // setFormInput([...formInput, data])
-        // console.log(data)
     }
 
     return (
         <div>
-            <form onSubmit={handleSubmit} className='flex flex-col md:h-[1024px] md:flex-row gap-x-10 border border-red-500'>
-                <div className='border w-full md:w-[34%] bg-gray-300 h-full'>
-                    <Section_first />
+            <form onSubmit={handleSubmit} className='flex flex-col md:h-[1024px] md:flex-row gap-x-10'>
+                <div className=' rounded-xl w-full md:w-[34%] bg-gray-300 h-full'>
+                    <SectionFirst />
                 </div>
-                <div className='border w-full md:w-[65%] bg-[#fff]'>
-                    <Section_second />
+                <div className='w-full md:w-[65%] bg-[#fff]'>
+                    <SectionSecond />
                 </div>
             </form>
-            <UserForm fields={entries}/>
+            {/* <UserForm fields={entries} /> */}
             <ToastContainer />
             {/* <Loader/> */}
         </div>
     )
 }
 
-export default Form
+export default FormComponent
 
 
 const validateEntries = (entries) => {

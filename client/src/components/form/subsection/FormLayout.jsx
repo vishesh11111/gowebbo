@@ -11,7 +11,6 @@ const FormLayout = ({ fields }) => {
   const { selectedBox, entries } = useSelector(state => state.form);
   const [count, setCount] = useState(0);
 
-  console.log("----<>", entries)
 
   const handleSelect = (selected) => {
     setCount(count + 1);

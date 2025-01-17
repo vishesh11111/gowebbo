@@ -10,6 +10,7 @@ formControllers.create = async (req, res, next) => {
     try {
         const { body } = req;
         const schema = Joi.object({
+            link: Joi.string().required(),
             title: Joi.string().required(),
             data: Joi.array().required(),
             active: Joi.boolean().optional().allow(null, ""),

@@ -102,7 +102,7 @@ const FormLayout = ({ fields }) => {
 
   return (
     <div className="w-full mt-10">
-      <form className="space-y-6">
+      <div className="space-y-6">
         {groupedFields.map((group, groupIndex) => (
           <div key={groupIndex} className="space-y-4">
             {group[0].html_type === 'input' ? (
@@ -118,7 +118,7 @@ const FormLayout = ({ fields }) => {
             )}
           </div>
         ))}
-      </form>
+      </div>
     </div>
   );
 };

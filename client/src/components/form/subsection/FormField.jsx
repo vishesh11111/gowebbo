@@ -21,12 +21,11 @@ const FormField = () => {
         }
 
         const findIndex = entries?.findIndex(item => item?.id === selectedBox?.id);
-        if (findIndex === -1) return; // Early return if the entry is not found
+        if (findIndex === -1) return; 
 
-        // Create a new entry object with the updated value
         const updatedEntry = {
             ...entries[findIndex],
-            [name]: value // Update the specific field
+            [name]: value 
         };
 
         const cloneEntries = [...entries];

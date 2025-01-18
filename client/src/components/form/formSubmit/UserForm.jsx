@@ -80,7 +80,7 @@ const UserForm = ({ fields }) => {
                                         placeholder={field?.value}
                                     />
                                     {errors[field.name] && (
-                                        <p className="text-red-500 text-sm">{errors[field.name].message}</p>
+                                        <p className="text-red-500 text-[1.4rem] md:text-[1.8rem]">{errors[field.name].message}</p>
                                     )}
                                 </>
                             )}
@@ -106,7 +106,7 @@ const UserForm = ({ fields }) => {
                             render={({ field: { value } }) => (
                                 <label className="flex items-center space-x-2 cursor-pointer">
                                     <input
-                                        type="checkbox"
+                                        type="radio"
                                         checked={selectedStoreAs[field.store_as] === field.name}
                                         onChange={() => handleCheckboxChange(field.name, field.store_as)}
                                         className="form-checkbox md:h-9 md:w-9 text-blue-600"
